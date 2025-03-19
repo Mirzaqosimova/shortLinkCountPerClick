@@ -13,7 +13,10 @@ Ensure you have Node.js and Yarn installed.
    cd shortLinkCountPerClick
 
 2. Install dependencies:
+
+```
    yarn install
+```
 
 ## Build
 
