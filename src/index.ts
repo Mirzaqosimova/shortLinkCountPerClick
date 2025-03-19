@@ -52,6 +52,12 @@ const db = knex({
 // API to create a new short link
 app.post("/api/create", async (req: Request, res: Response): Promise<void> => {
   try {
+    const apikey = req.headers.apikey;
+    if (apikey !== "cb13341b-662b-46f5-9a94-1f691e51d134") {
+      res.status(403).json({ error: "Token is invalid" });
+      return;
+    }
+
     const { original_url, short_id } = req.body;
     if (!original_url) {
       res.status(400).json({ error: "URL is required" });
@@ -79,6 +85,12 @@ app.put(
   "/api/change-status",
   async (req: Request, res: Response): Promise<void> => {
     try {
+      const apikey = req.headers.apikey;
+      if (apikey !== "cb13341b-662b-46f5-9a94-1f691e51d134") {
+        res.status(403).json({ error: "Token is invalid" });
+        return;
+      }
+
       const { status, short_id } = req.body;
 
       await db("links").where({ short_id }).update({ status });
@@ -133,10 +145,18 @@ app.get(
       });
 
       try {
-        await axios.put(`${process.env.CRM_URL}/links/update-count`, {
-          short_id,
-          count: link.clicks + 1,
-        });
+        await axios.put(
+          `${process.env.CRM_URL}/links/update-count`,
+          {
+            short_id,
+            count: link.clicks + 1,
+          },
+          {
+            headers: {
+              apikey: "cb13341b-662b-46f5-9a94-1f691e51d134",
+            },
+          }
+        );
       } catch (externalError) {
         console.log(externalError);
         res.status(500).json({ error: "Internal server error" });
