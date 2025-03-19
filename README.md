@@ -21,12 +21,18 @@ Ensure you have Node.js and Yarn installed.
 ## Build
 
 To build the project, run:
+
+```
 yarn run build
+```
 
 ## Start the Project
 
 To start the project, run:
+
+```
 yarn start
+```
 
 ## Contributing
 
