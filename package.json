@@ -13,6 +13,7 @@
     "@types/knex": "^0.16.1",
     "@types/node": "^22.13.10",
     "axios": "^1.8.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -23,6 +24,7 @@
     "typescript": "^5.8.2"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17"
   }
 }
