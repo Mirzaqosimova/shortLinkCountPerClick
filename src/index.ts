@@ -17,6 +17,8 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(express.json());
 app.use(cors());
+//CHATGPT ETDI serverda agar ishlamasa shuni qoy db
+app.set("trust proxy", true);
 
 // Initialize Knex
 const db = knex({
@@ -175,6 +177,5 @@ app.get("/api/stats", async (req: Request, res: Response) => {
   const links = await db("links").select();
   res.json(links);
 });
-//CHATGPT ETDI serverda agar ishlamasa shuni qoy db
-app.set("trust proxy", true);
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
