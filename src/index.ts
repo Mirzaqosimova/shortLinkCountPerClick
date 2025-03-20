@@ -175,5 +175,6 @@ app.get("/api/stats", async (req: Request, res: Response) => {
   const links = await db("links").select();
   res.json(links);
 });
-
+//CHATGPT ETDI serverda agar ishlamasa shuni qoy db
+app.set("trust proxy", true);
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
