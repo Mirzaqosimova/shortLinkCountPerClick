@@ -113,8 +113,12 @@ app.get(
       const { short_id } = req.params;
       const ip_address =
         req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+      const private_ip = req.socket.remoteAddress;
 
-      console.log(`User IP: ${ip_address}`);
+      console.log(
+        `Public IP: ${ip_address}, Private IP: ${private_ip}, Socket: ${req.socket.remoteAddress}`
+      );
+
       const link = await db("links")
         .where({ short_id, status: Status.ACTIVE })
         .first();
