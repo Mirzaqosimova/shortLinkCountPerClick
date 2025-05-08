@@ -5,12 +5,29 @@ import knex from "knex";
 import cors from "cors";
 import dotenv from "dotenv";
 import { nanoid } from "nanoid";
-import { Status } from "./const";
+import { LinkType, Status } from "./const";
 import axios from "axios";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
-
+export const CONFIGS = {
+  [LinkType.CRM]: {
+    url: process.env.CRM_URL + "/links/update-count",
+    token: "cb13341b-662b-46f5-9a94-1f691e51d134",
+  },
+  [LinkType.CRM_DEMO]: {
+    url: process.env.CRM_DEMO_URL + "/links/update-count",
+    token: "cb13341b-662b-46f5-9a94-1f691e51d134",
+  },
+  [LinkType.MENTALABA]: {
+    url: process.env.MENTALABA_URL + "/links/update-count",
+    token: "634a78b7-63a4-4321-8603-c94d41204549",
+  },
+  [LinkType.MENTALABA_DEMO]: {
+    url: process.env.MENTALABA_DEMO_URL + "/links/update-count",
+    token: "634a78b7-63a4-4321-8603-c94d41204549",
+  },
+};
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -33,6 +50,7 @@ const db = knex({
       table.increments("id").primary();
       table.string("original_url").notNullable();
       table.string("short_id").notNullable();
+      table.string("type").notNullable();
       table.string("status").defaultTo(Status.ACTIVE);
       table.integer("clicks").defaultTo(0);
     });
@@ -65,12 +83,17 @@ app.use((req, res, next) => {
 app.post("/api/create", async (req: Request, res: Response): Promise<void> => {
   try {
     const apikey = req.headers.apikey;
-    if (apikey !== "cb13341b-662b-46f5-9a94-1f691e51d134") {
+    const { original_url, short_id, type } = req.body as {
+      original_url: string;
+      short_id: string;
+      type: LinkType;
+    };
+
+    if (CONFIGS[type] && apikey !== CONFIGS[type].token) {
       res.status(403).json({ error: "Token is invalid" });
       return;
     }
 
-    const { original_url, short_id } = req.body;
     if (!original_url) {
       res.status(400).json({ error: "URL is required" });
       return;
@@ -81,7 +104,7 @@ app.post("/api/create", async (req: Request, res: Response): Promise<void> => {
 
     const new_short_id = nanoid(12);
 
-    await db("links").insert({ short_id: new_short_id, original_url });
+    await db("links").insert({ short_id: new_short_id, original_url, type });
 
     res.json({
       short_id: new_short_id,
@@ -98,12 +121,15 @@ app.put(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const apikey = req.headers.apikey;
-      if (apikey !== "cb13341b-662b-46f5-9a94-1f691e51d134") {
+      const { status, short_id, type } = req.body as {
+        status: string;
+        short_id: string;
+        type: LinkType;
+      };
+      if (CONFIGS[type] && apikey !== CONFIGS[type].token) {
         res.status(403).json({ error: "Token is invalid" });
         return;
       }
-
-      const { status, short_id } = req.body;
 
       await db("links").where({ short_id }).update({ status });
       res.json({
@@ -125,20 +151,24 @@ app.get(
       const ip_address =
         req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-      console.log(userId, ip_address);
-      const link = await db("links")
-        .where({ short_id, status: Status.ACTIVE })
-        .first();
-
       if (!userId) {
         res.status(404).json({ error: "Oops something went wrong" });
         return;
       }
 
+      const link: {
+        original_url: string;
+        clicks: number;
+        id: number;
+        status: Status;
+        type: LinkType;
+      } = await db("links").where({ short_id, status: Status.ACTIVE }).first();
+
       if (!link) {
         res.status(404).json({ error: "Link not found" });
         return;
       }
+      console.log(userId, ip_address, link, CONFIGS[link.type].url);
       const hasVisited = await db("link_visitors")
         .where({ link_id: link.id, user_id: userId })
         .first();
@@ -165,14 +195,14 @@ app.get(
 
       try {
         await axios.put(
-          `${process.env.CRM_URL}/links/update-count`,
+          CONFIGS[link.type].url,
           {
             short_id,
             count: link.clicks + 1,
           },
           {
             headers: {
-              apikey: "cb13341b-662b-46f5-9a94-1f691e51d134",
+              apikey: CONFIGS[link.type].token,
             },
           }
         );
@@ -181,7 +211,7 @@ app.get(
         res.status(500).json({ error: "Internal server error" });
       }
 
-      res.redirect(link.original_url);
+      res.redirect(link.original_url + "");
     } catch (error) {
       console.error("Error handling redirect:", error);
       res.status(500).json({ error: "Internal server error" });
